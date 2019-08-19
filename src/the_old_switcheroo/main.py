@@ -16,6 +16,7 @@ from .const import *
 
 class Switcheroo:
     tiffCB=Callback()
+    replaced=0
 
     def __init__(self):
         addHook("mungeQA", self.inline_media)
@@ -30,6 +31,8 @@ class Switcheroo:
 
 
     def onShowQuestion(self):
+        if not self.replaced:
+            return
         self.addCallback("tiffcmd", self.tiffCB)
         if not CCBC:
             js = QFile(':/qtwebchannel/qwebchannel.js')
@@ -77,8 +80,11 @@ onmousedown="handleTIFF(event,this);" \
 src="%s" data-src="%s" data-pg="0">\
 """%(png,tif)
 
-        html=RE_MEDIA.sub(subEmbedTag,html)
-        return html + """<script>
+        s,cnt=RE_MEDIA.subn(subEmbedTag,html)
+        self.replaced=cnt
+        if not cnt:
+            return html
+        return s + """<script>
 function handleTIFF(e,el){
   el=$(el);
   src=el.attr('data-src');
