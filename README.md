@@ -12,3 +12,8 @@ You must run Anki from source. This addon uses the PILLOW library which can not 
 
 ## Cache:
 PNG files are created in a folder called ```.cache``` inside this addon's folder. Please remember to clear this cache from time to time.
+
+
+## Random:
+Use attribute ```data-rand="n"``` in ```<img``` tag where ```n``` is the max number of pages available in the multipage tiff file.
+

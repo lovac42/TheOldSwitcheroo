@@ -16,3 +16,5 @@ CACHE_DIR = os.path.join(MOD_ABS,".cache")
 os.makedirs(CACHE_DIR,exist_ok=True)
 
 RE_MEDIA=re.compile(r"""(\<img .*)src=['"](.*?\.tiff?)['"](.*?)/?\>""", re.I)
+
+RE_RAND=re.compile(r'''data-rand=['"](\d+)['"]''',re.I)

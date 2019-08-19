@@ -4,7 +4,7 @@
 # License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 
 
-import re, os
+import re, os, random
 from aqt import mw
 from aqt.qt import *
 from anki.hooks import addHook
@@ -64,6 +64,14 @@ new QWebChannel(qt.webChannelTransport, function(channel) {
             png,_=cacheImg(tif,0)
             if not png:
                 return r.group(0)
+
+            search=RE_RAND.search(r.group(0))
+            if search:
+                rand=random.randint(0,int(search.group(1)))
+                mw.progress.timer(50,
+                    lambda: self.tiffCB.update(tif,rand),
+                    False, requiresCollection=False)
+
             return r.group(1) + r.group(3) + u"""\
 onmousedown="handleTIFF(event,this);" \
 src="%s" data-src="%s" data-pg="0">\
@@ -72,11 +80,15 @@ src="%s" data-src="%s" data-pg="0">\
         html=RE_MEDIA.sub(subEmbedTag,html)
         return html + """<script>
 function handleTIFF(e,el){
-  src=$(el).attr('data-src');
-  pg=$(el).attr('data-pg');
+  el=$(el);
+  src=el.attr('data-src');
+  pg=el.attr('data-pg');
+  r=el.attr('data-rand');
   if(e.shiftKey){
     pg=parseInt(prompt("Jump to page:",pg));
     if(isNaN(pg)) return;
+  }else if(r){
+    pg=Math.random()*r;
   }else{
     pg++;
   }
@@ -88,3 +100,4 @@ function updateTIFF(src,png,pg){
   el.attr('src',png).attr('data-pg',pg);
 }
 </script>"""
+

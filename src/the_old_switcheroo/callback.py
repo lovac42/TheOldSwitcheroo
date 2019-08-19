@@ -6,13 +6,27 @@
 
 from aqt import mw
 from aqt.qt import *
+from anki.hooks import addHook
 from .utils import cacheImg
 
 
 class Callback(QObject):
+    dict={}
+
+    def __init__(self):
+        QObject.__init__(self)
+        addHook("showAnswer", self.restoreData)
+
+    def restoreData(self):
+        "Persistent storage"
+        for t,r in self.dict.items():
+            self.update(t,r)
+        dict={}
+
     @pyqtSlot(str, int)
     def update(self, src, pg):
         png,pg=cacheImg(src,pg)
         if not png:
             return
         mw.web.eval('updateTIFF("%s","%s","%s");'%(src,png,pg))
+        self.dict[src]=pg
