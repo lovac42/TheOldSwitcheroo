@@ -19,66 +19,50 @@ class Switcheroo:
     replaced=0
 
     def __init__(self):
-        addHook("mungeQA", self.inline_media)
-        addHook("showQuestion", self.onShowQuestion)
-
-        if CCBC:
-            self.addCallback=mw.reviewer.web.page().mainFrame().addToJavaScriptWindowObject
-        else:
-            self.addCallback=mw.reviewer.web.page()._channel.registerObject
-            self.insert=mw.reviewer.web.page().profile().scripts().insert
+        addHook("prepareQA", self.onPrepareQA)
+        if not CCBC:
             mw.addonManager._webExports[MOD_DIR] = '.*\.png$'
 
 
-    def onShowQuestion(self):
-        if not self.replaced:
-            return
-        self.addCallback("tiffcmd", self.tiffCB)
-        if not CCBC:
-            js = QFile(':/qtwebchannel/qwebchannel.js')
-            assert js.open(QIODevice.ReadOnly)
-            js = bytes(js.readAll()).decode('utf-8')
+    def onPrepareQA(self, txt, card, state):
+        if state.endswith("Question"):
+            getPage=self._getRandPageNum
+        else:
+            getPage=self._getSavedPageNum
+        txt=self.inline_media(txt,getPage)
+        if self.replaced and state.endswith("Question"):
+            self.tiffCB.attachCallback(state)
+        return txt
 
-            script=QWebEngineScript()
-            script.setInjectionPoint(QWebEngineScript.DocumentCreation)
-            script.setWorldId(QWebEngineScript.MainWorld)
-            script.setName("qwebchannel.js");
-            script.setRunsOnSubFrames(False)
-
-            # TODO: fix channel error
-            # Uncaught TypeError: channel.execCallbacks[message.id]
-            # is not a function
-            script.setSourceCode(js+'''
-var tiffcmd;
-var update;
-new QWebChannel(qt.webChannelTransport, function(channel) {
-    try{
-        tiffcmd=channel.objects.tiffcmd;
-        update=channel.objects.tiffcmd.update;
-    }catch(TypeError){;}
-});
-        ''')
-            self.insert(script)
+# TODO: Known Bugs
+# Can't attach callback to previewer on Answer side for CCBC.
+# Or when "show both sides" is selected for 2.1.
+# Can't get instance of clayout to attach a callback/js script
 
 
-    def inline_media(self, html, *args, **kwargs):
+    def _getRandPageNum(self, tif, group):
+        search=RE_RAND.search(group)
+        if search:
+            pg=random.randint(0,int(search.group(1)))
+            self.tiffCB.dict[tif]=pg
+            return pg
+        return 0
+
+    def _getSavedPageNum(self, tif, group):
+        return self.tiffCB.dict.get(tif,0)
+
+
+    def inline_media(self, html, getPage):
         def subEmbedTag(r):
             tif=r.group(2)
-            png,_=cacheImg(tif,0)
+            pg=getPage(tif,r.group(0))
+            png,_=cacheImg(tif,pg)
             if not png:
                 return r.group(0)
-
-            search=RE_RAND.search(r.group(0))
-            if search:
-                rand=random.randint(0,int(search.group(1)))
-                mw.progress.timer(50,
-                    lambda: self.tiffCB.update(tif,rand),
-                    False, requiresCollection=False)
-
             return r.group(1) + r.group(3) + u"""\
 onmousedown="handleTIFF(event,this);" \
-src="%s" data-src="%s" data-pg="0">\
-"""%(png,tif)
+src="%s" data-src="%s" data-pg="%s">\
+"""%(png,tif,pg)
 
         s,cnt=RE_MEDIA.subn(subEmbedTag,html)
         self.replaced=cnt
@@ -91,14 +75,14 @@ function handleTIFF(e,el){
   pg=el.attr('data-pg');
   r=el.attr('data-rand');
   if(e.shiftKey){
-    pg=parseInt(prompt("Jump to page:",pg));
+    pg=parseInt(prompt("Jump to page: (0-based)",pg));
     if(isNaN(pg)) return;
   }else if(r){
     pg=Math.random()*r;
   }else{
     pg++;
   }
-  tiffcmd.update(src,pg);
+  tiffcmd.update(src,pg,tiffParentFrame);
   return false;
 }
 function updateTIFF(src,png,pg){
