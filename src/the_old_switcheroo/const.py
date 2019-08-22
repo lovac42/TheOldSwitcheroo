@@ -18,3 +18,5 @@ os.makedirs(CACHE_DIR,exist_ok=True)
 RE_MEDIA=re.compile(r"""(\<img .*)src=['"](.*?\.tiff?)['"](.*?)/?\>""", re.I)
 
 RE_RAND=re.compile(r'''data-rand=['"](\d+)['"]''',re.I)
+
+RE_TARGET=re.compile(r'''data-target=['"](\d+)['"]''',re.I)

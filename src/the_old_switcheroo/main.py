@@ -24,9 +24,14 @@ class Switcheroo:
             mw.addonManager._webExports[MOD_DIR] = '.*\.png$'
 
 
+# TODO: Known Bugs
+# Can't attach callback to previewer on Answer side for CCBC.
+# Or when "show both sides" is selected for 2.1.
+# Can't get instance of clayout to attach a callback/js script
+
     def onPrepareQA(self, txt, card, state):
         if state.endswith("Question"):
-            getPage=self._getRandPageNum
+            getPage=self._getInitPageNum
         else:
             getPage=self._getSavedPageNum
         txt=self.inline_media(txt,getPage)
@@ -34,22 +39,22 @@ class Switcheroo:
             self.tiffCB.attachCallback(state)
         return txt
 
-# TODO: Known Bugs
-# Can't attach callback to previewer on Answer side for CCBC.
-# Or when "show both sides" is selected for 2.1.
-# Can't get instance of clayout to attach a callback/js script
 
+    def _getSavedPageNum(self, tif, group):
+        return self.tiffCB.dict.get(tif,0)
 
-    def _getRandPageNum(self, tif, group):
+    def _getInitPageNum(self, tif, group):
+        search=RE_TARGET.search(group)
+        if search:
+            pg=int(search.group(1))
+            self.tiffCB.dict[tif]=pg
+            return pg
         search=RE_RAND.search(group)
         if search:
             pg=random.randint(0,int(search.group(1)))
             self.tiffCB.dict[tif]=pg
             return pg
         return 0
-
-    def _getSavedPageNum(self, tif, group):
-        return self.tiffCB.dict.get(tif,0)
 
 
     def inline_media(self, html, getPage):
