@@ -25,8 +25,6 @@ class Switcheroo:
 
 
 # TODO: Known Bugs
-# Can't attach callback to previewer on Answer side for CCBC.
-# Or when "show both sides" is selected for 2.1.
 # Can't get instance of clayout to attach a callback/js script
 
     def onPrepareQA(self, txt, card, state):
@@ -35,8 +33,8 @@ class Switcheroo:
         else:
             getPage=self._getSavedPageNum
         txt=self.inline_media(txt,getPage)
-        if self.replaced and state.endswith("Question"):
-            self.tiffCB.attachCallback(state)
+        if self.replaced:
+            mw.progress.timer(10,lambda:self.tiffCB.attachCallback(state),False)
         return txt
 
 
