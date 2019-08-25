@@ -20,3 +20,7 @@ RE_MEDIA=re.compile(r"""(\<img .*)src=['"](.*?\.tiff?)['"](.*?)/?\>""", re.I)
 RE_RAND=re.compile(r'''data-rand=['"](\d+)['"]''',re.I)
 
 RE_TARGET=re.compile(r'''data-target=['"](\d+)['"]''',re.I)
+
+RE_MAL_PG=re.compile(r'''data-pg=['"](\d+)['"]''',re.I)
+
+RE_MAL_SRC=re.compile(r'''data-src=['"].*?['"]''',re.I)

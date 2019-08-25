@@ -18,12 +18,13 @@ class Callback(QObject):
         QObject.__init__(self)
         addHook("browser.setupMenus", self._setBrowser)
         addHook("showAnswer", self._clearData)
+        addHook('beforeStateChange', self._clearData)
 
     def _setBrowser(self, bws):
         "Save ref to browser instance"
         self.browser=bws
 
-    def _clearData(self):
+    def _clearData(self, *args):
         self.dict={}
 
     def _getWeb(self, parent):
